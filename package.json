@@ -11,7 +11,7 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "auto-schedule": "tsx script/auto-schedule.ts",
-    "build:tauri": "vite build --outDir dist/public",
+    "build:tauri": "vite build --outDir ../dist/public",
     "build:sidecar": "tsx script/build-sidecar.ts",
     "build:sidecar:pkg": "tsx script/build-sidecar-pkg.ts",
     "tauri": "tauri",
