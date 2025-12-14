@@ -16,7 +16,7 @@
     "build:sidecar:pkg": "tsx script/build-sidecar-pkg.ts",
     "tauri": "tauri",
     "tauri:dev": "npm run build:sidecar && npm run build:sidecar:pkg && tauri dev",
-    "tauri:build": "npm run build:sidecar && npm run build:sidecar:pkg && tauri build"
+    "tauri:build": "npm run build:tauri && npm run build:sidecar && npm run build:sidecar:pkg && tauri build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
