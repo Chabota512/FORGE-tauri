@@ -54,14 +54,8 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Build Backend Sidecar
-        run: npm run build:sidecar && npm run build:sidecar:pkg
-
-      - name: Build Frontend Assets
-        run: npm run build:tauri
-
       - name: Build Tauri App
-        run: npm run tauri build
+        run: npm run tauri:build
         env:
           RUST_BACKTRACE: 1
 
