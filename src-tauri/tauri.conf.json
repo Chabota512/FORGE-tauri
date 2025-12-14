@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "identifier": "com.forge.app",
   "build": {
+    "beforeBuildCommand": "npm run build:tauri",
     "beforeDevCommand": "npm run dev:client",
     "devUrl": "http://localhost:5000",
     "frontendDist": "../dist/public"
