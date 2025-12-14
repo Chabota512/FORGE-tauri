@@ -46,7 +46,7 @@
         "resizable": true,
         "title": "Forge",
         "width": 1400,
-        "visible": false
+        "visible": true
       }
     ],
     "security": {
