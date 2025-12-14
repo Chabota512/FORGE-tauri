@@ -6,7 +6,7 @@
     "beforeBuildCommand": "npm run build:tauri",
     "beforeDevCommand": "npm run dev:client",
     "devUrl": "http://localhost:5000",
-    "frontendDist": "dist/public"
+    "frontendDist": "../dist/public"
   },
   "bundle": {
     "active": true,
