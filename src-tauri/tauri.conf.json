@@ -1,0 +1,55 @@
+{
+  "productName": "Forge",
+  "version": "0.1.0",
+  "identifier": "com.forge.app",
+  "build": {
+    "beforeBuildCommand": "npm run build:tauri",
+    "beforeDevCommand": "npm run dev:client",
+    "devUrl": "http://localhost:5000",
+    "frontendDist": "../dist/public"
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "resources": [
+      "resources/.env.example"
+    ],
+    "externalBin": [
+      "binaries/forge-backend"
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "wix": {
+        "language": "en-US"
+      }
+    },
+    "targets": ["msi", "nsis"]
+  },
+  "plugins": {
+    "shell": {
+      "scope": {
+        "sidecar": {
+          "forge-backend": true
+        }
+      }
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 900,
+        "resizable": true,
+        "title": "Forge",
+        "width": 1400,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

@@ -1,0 +1,29 @@
+IMPORTANT: How to Rebuild on Windows
+
+1. Download the latest FORGE folder from Replit
+
+2. Make sure you have the .env file in the FORGE folder:
+   C:\dev\FORGE\.env
+   
+   With this content (fill in your actual API keys):
+   DATABASE_URL=your_postgres_connection_string
+   GROQ_API_KEY=your_groq_api_key
+   OPENAI_API_KEY=your_openai_api_key
+   GEMINI_API_KEY=your_gemini_api_key
+
+3. Open PowerShell and run:
+   cd C:\dev\FORGE
+   npm install
+   npm run tauri:build
+
+4. Uninstall the old Forge app (Control Panel > Programs)
+
+5. Install the NEW MSI:
+   C:\dev\FORGE\src-tauri\target\release\bundle\msi\Forge_0.1.0_x64_en-US.msi
+
+6. After installation, create .env in the install folder:
+   C:\Program Files\Forge\.env
+   
+   With the SAME content as above
+
+7. Run Forge.exe - it should now work!
