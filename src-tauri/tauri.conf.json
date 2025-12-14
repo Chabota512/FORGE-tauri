@@ -15,6 +15,7 @@
       "icons/icon.ico"
     ],
     "resources": [
+      "resources/.env",
       "resources/.env.example"
     ],
     "externalBin": [
