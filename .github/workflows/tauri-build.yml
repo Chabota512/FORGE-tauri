@@ -57,7 +57,7 @@ jobs:
       - name: Build Backend Sidecar
         run: npm run build:sidecar && npm run build:sidecar:pkg
 
-      - name: Build Frontend
+      - name: Build Frontend Assets
         run: npm run build:tauri
 
       - name: Build Tauri App
