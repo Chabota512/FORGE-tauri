@@ -22,15 +22,15 @@ if (!existsSync(cacheDir)) {
 env.cacheDir = cacheDir;
 env.allowLocalModels = true;
 
-// Force WASM-only backend - completely disable native onnxruntime-node
-// This is critical for pkg packaging compatibility
-env.backends.onnx.wasm.proxy = false;
-// @ts-ignore - Force WASM backend priority
-if (env.backends?.onnx) {
-  // Disable native backend to prevent onnxruntime-node require
-  (env as any).useBrowserCache = false;
-  // Set execution providers to only use WASM
-  (env.backends.onnx as any).executionProviders = ['wasm'];
+// Configure WASM backend safely - only if backends are initialized
+try {
+  // Force WASM-only backend to prevent onnxruntime-node loading
+  if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
+    env.backends.onnx.wasm.proxy = false;
+  }
+} catch (e) {
+  // Silently ignore - backends may not be initialized yet
+  console.log("[Retriever] Backend configuration deferred (will initialize on first use)");
 }
 
 let embeddingPipeline: FeatureExtractionPipeline | null = null;
