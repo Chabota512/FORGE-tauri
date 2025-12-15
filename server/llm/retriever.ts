@@ -5,7 +5,6 @@
  * using PostgreSQL with cosine similarity search. All embeddings are user-isolated.
  */
 
-import { pipeline, FeatureExtractionPipeline, env } from "@xenova/transformers";
 import { db } from "../db";
 import { documentChunks, uploadedFiles } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -13,27 +12,40 @@ import { join } from "path";
 import { existsSync, mkdirSync } from "fs";
 import { homedir } from "os";
 
-// Configure transformers.js for packaged app
-// Use WASM backend instead of native Node bindings for better pkg compatibility
-const cacheDir = process.env.TRANSFORMERS_CACHE || join(homedir(), ".forge", "models");
-if (!existsSync(cacheDir)) {
-  mkdirSync(cacheDir, { recursive: true });
-}
-env.cacheDir = cacheDir;
-env.allowLocalModels = true;
+let embeddingPipeline: any = null;
+let transformersReady = false;
 
-// Configure WASM backend safely - only if backends are initialized
-try {
-  // Force WASM-only backend to prevent onnxruntime-node loading
-  if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
-    env.backends.onnx.wasm.proxy = false;
+// Lazy-load transformers only when needed (for packaged app compatibility)
+async function initializeTransformers() {
+  if (transformersReady) return;
+  
+  try {
+    const { pipeline, env } = await import("@xenova/transformers");
+    
+    // Configure cache directory
+    const cacheDir = process.env.TRANSFORMERS_CACHE || join(homedir(), ".forge", "models");
+    if (!existsSync(cacheDir)) {
+      mkdirSync(cacheDir, { recursive: true });
+    }
+    env.cacheDir = cacheDir;
+    env.allowLocalModels = true;
+    
+    // Safe backend configuration
+    try {
+      if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
+        env.backends.onnx.wasm.proxy = false;
+      }
+    } catch (e) {
+      console.log("[Retriever] Backend config deferred");
+    }
+    
+    transformersReady = true;
+    return { pipeline, env };
+  } catch (error) {
+    console.error("[Retriever] Failed to initialize transformers:", error);
+    throw error;
   }
-} catch (e) {
-  // Silently ignore - backends may not be initialized yet
-  console.log("[Retriever] Backend configuration deferred (will initialize on first use)");
 }
-
-let embeddingPipeline: FeatureExtractionPipeline | null = null;
 
 /**
  * Chunk metadata stored alongside embeddings in PostgreSQL
@@ -71,14 +83,20 @@ export function sanitizeCourseCode(courseCode: string): string {
  * Uses Xenova/all-MiniLM-L6-v2 (14MB, runs in-process)
  * @returns Promise resolving to the embedding pipeline
  */
-async function getEmbeddingPipeline(): Promise<FeatureExtractionPipeline> {
+async function getEmbeddingPipeline(): Promise<any> {
   if (!embeddingPipeline) {
-    console.log("[Retriever] Loading embedding model: Xenova/all-MiniLM-L6-v2");
-    embeddingPipeline = await pipeline(
-      "feature-extraction",
-      "Xenova/all-MiniLM-L6-v2"
-    ) as FeatureExtractionPipeline;
-    console.log("[Retriever] Embedding model loaded successfully");
+    try {
+      console.log("[Retriever] Loading embedding model: Xenova/all-MiniLM-L6-v2");
+      const { pipeline } = await initializeTransformers();
+      embeddingPipeline = await pipeline(
+        "feature-extraction",
+        "Xenova/all-MiniLM-L6-v2"
+      );
+      console.log("[Retriever] Embedding model loaded successfully");
+    } catch (error) {
+      console.error("[Retriever] Failed to load embedding pipeline:", error);
+      throw new Error("Embedding pipeline initialization failed. RAG features will be unavailable.");
+    }
   }
   return embeddingPipeline;
 }
