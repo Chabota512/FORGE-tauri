@@ -1,0 +1,207 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  
+  --font-sans: 'Chakra Petch', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-display: 'Chakra Petch', sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+/* 
+   THEME: "Acid Ops" / "Cyber-Brutalist"
+   Psychology:
+   - Stark Contrast: Black vs Acid Green. High visibility, aggressive.
+   - Boxy/Angular: 'Chakra Petch' font has cut corners, feeling like military hardware.
+   - Raw Tech: Less "glass", more "metal" and "wire".
+*/
+:root {
+  /* Base - Deepest Carbon */
+  --background: 0 0% 5%; /* #0d0d0d */
+  --foreground: 0 0% 90%;
+
+  /* Cards - Solid, slightly lighter carbon */
+  --card: 0 0% 8%; /* #141414 */
+  --card-foreground: 0 0% 90%;
+
+  /* Popovers */
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 90%;
+
+  /* Primary - Acid Green / High Voltage */
+  --primary: 84 81% 59%; /* #bef264 (lime-400) */
+  --primary-foreground: 0 0% 5%;
+
+  /* Secondary - Dark Grey Metal */
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 90%;
+
+  /* Muted */
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 50%;
+
+  /* Accent - For hover states */
+  --accent: 84 81% 59%;
+  --accent-foreground: 0 0% 5%;
+
+  /* Destructive - Alert Orange */
+  --destructive: 20 90% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Borders - Sharp */
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 84 81% 59%;
+
+  --radius: 0px; /* BRUTALIST - No rounded corners */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased text-foreground relative;
+    background-color: hsl(var(--background));
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url('/bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    filter: blur(4px) brightness(0.6) saturate(1.1);
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display uppercase tracking-widest font-bold;
+  }
+
+  /* Custom Scrollbar Styling - Cyber Brutalist Theme */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary)) hsl(var(--card));
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: hsl(var(--card));
+    border-left: 1px solid hsl(var(--border));
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.6);
+    border: 2px solid hsl(var(--card));
+    transition: background 0.2s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: hsl(var(--card));
+  }
+
+  /* Utility class for the theme's signature panel style */
+  .tech-panel {
+    @apply bg-card/90 border border-border shadow-none relative overflow-hidden;
+  }
+  
+  /* Decorative corner markers for tech feel */
+  .tech-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid hsl(var(--primary));
+    border-left: 2px solid hsl(var(--primary));
+    pointer-events: none;
+    z-index: 10;
+  }
+  .tech-panel::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    border-bottom: 2px solid hsl(var(--primary));
+    border-right: 2px solid hsl(var(--primary));
+    pointer-events: none;
+    z-index: 10;
+  }
+}
+
+@keyframes neonGlowFlash {
+  0% {
+    box-shadow: 0 0 0 1px rgba(190, 242, 100, 0);
+  }
+  50% {
+    box-shadow: 0 0 8px 1px rgba(190, 242, 100, 0.5), inset 0 0 12px rgba(190, 242, 100, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 1px rgba(190, 242, 100, 0);
+  }
+}
+
+.animate-border-flash {
+  animation: neonGlowFlash 0.8s ease-in-out forwards;
+}
+
+/* Date input calendar icon styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) hue-rotate(80deg) brightness(1.2);
+  cursor: pointer;
+}
+
+input[type="date"] {
+  accent-color: hsl(var(--primary));
+}
+
+/* Time input calendar icon styling */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) hue-rotate(80deg) brightness(1.2);
+  cursor: pointer;
+}
+
+input[type="time"] {
+  accent-color: hsl(var(--primary));
+}

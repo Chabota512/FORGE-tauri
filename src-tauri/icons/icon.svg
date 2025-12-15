@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="256" height="256" fill="#1a1a1a"/>
+  
+  <!-- Slim forward-tilted parallelogram -->
+  <polygon points="75,50 205,50 180,206 50,206"
+           fill="#B3FF3D" />
+
+  <!-- Black F -->
+  <text x="127.5" y="160"
+        font-family="Arial, sans-serif"
+        font-size="110"
+        font-weight="700"
+        text-anchor="middle"
+        fill="#000">
+    F
+  </text>
+</svg>
