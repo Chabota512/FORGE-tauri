@@ -43,13 +43,17 @@ declare module "http" {
 
 const PgSession = connectPgSimple(session);
 
+// Detect if running as Tauri desktop app
+const isTauriApp = process.env.TAURI_APP === "true";
+
 // Generate a secure random session secret if not provided
 const getSessionSecret = (): string => {
   if (process.env.SESSION_SECRET) {
     return process.env.SESSION_SECRET;
   }
-  // Generate a unique random secret for this installation
-  console.warn("[Security] SESSION_SECRET not set - generating random secret");
+  // Generate a unique random secret - sessions will reset on restart
+  // For persistent sessions, set SESSION_SECRET in your .env file
+  console.warn("[Security] SESSION_SECRET not set - generating random secret (sessions will not persist across restarts)");
   return crypto.randomBytes(32).toString("hex");
 };
 const sessionSecret = getSessionSecret();
@@ -103,9 +107,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // HTTP in dev/Tauri, HTTPS in production
+      // Tauri runs locally over HTTP, so secure must be false for desktop app
+      // For web deployments, use secure cookies over HTTPS
+      secure: process.env.NODE_ENV === "production" && !isTauriApp,
       httpOnly: true,
-      sameSite: "none", // Required for cross-origin cookies (Tauri webview)
+      // "lax" works for both Tauri (HTTP) and same-site web requests
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     },
   })
