@@ -34,11 +34,7 @@
   },
   "plugins": {
     "shell": {
-      "scope": {
-        "sidecar": {
-          "forge-backend": true
-        }
-      }
+      "open": ""
     }
   },
   "app": {
