@@ -29,55 +29,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function checkAuth() {
-    try {
-      const response = await fetch(getApiUrl("/api/auth/me"), {
-        credentials: "include",
-      });
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        const response = await fetch(getApiUrl("/api/auth/me"), {
+          credentials: "include",
+          signal: AbortSignal.timeout(5000),
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        }
+        // Success or error response received, exit retry loop
+        break;
+      } catch (error) {
+        retries++;
+        if (retries < maxRetries) {
+          // Wait before retrying (500ms * retry count)
+          await new Promise(resolve => setTimeout(resolve, 500 * retries));
+        } else {
+          console.error("Auth check failed after retries:", error);
+        }
       }
-    } catch (error) {
-      console.error("Auth check failed:", error);
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   }
 
   async function login(email: string, password: string) {
-    const response = await fetch(getApiUrl("/api/auth/login"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
-    });
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        const response = await fetch(getApiUrl("/api/auth/login"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+          signal: AbortSignal.timeout(5000),
+        });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Login failed");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Login failed");
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+        setLocation("/dashboard");
+        return;
+      } catch (error) {
+        retries++;
+        if (retries < maxRetries) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 500 * retries));
+        } else {
+          throw error;
+        }
+      }
     }
-
-    const userData = await response.json();
-    setUser(userData);
-    setLocation("/dashboard");
   }
 
   async function signup(email: string, password: string, name: string) {
-    const response = await fetch(getApiUrl("/api/auth/signup"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password, name }),
-    });
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        const response = await fetch(getApiUrl("/api/auth/signup"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password, name }),
+          signal: AbortSignal.timeout(5000),
+        });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Signup failed");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Signup failed");
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+        setLocation("/home");
+        return;
+      } catch (error) {
+        retries++;
+        if (retries < maxRetries) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 500 * retries));
+        } else {
+          throw error;
+        }
+      }
     }
-
-    const userData = await response.json();
-    setUser(userData);
-    setLocation("/home");
   }
 
   async function logout() {
