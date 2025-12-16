@@ -1,7 +1,6 @@
-#![cfg_attr(
-  all(not(debug_assertions), target_os = "windows"),
-  windows_subsystem = "windows"
-)]
+// Show console window on Windows for debugging logs
+// Comment out the next line to hide console in production
+// #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
 use std::sync::Mutex;
 use tauri::Manager;
