@@ -42,6 +42,41 @@ declare module "http" {
 
 const PgSession = connectPgSimple(session);
 
+// CORS middleware for Tauri webview
+app.use((req, res, next) => {
+  const origin = req.headers.origin || req.headers.referer;
+  
+  // Allow requests from localhost, Tauri, and file:// origins
+  const allowedOrigins = [
+    "http://localhost:5000",
+    "http://localhost:3000",
+    "http://127.0.0.1:5000",
+    "http://127.0.0.1:3000",
+  ];
+  
+  // For Tauri desktop app, allow file:// and tauri:// schemes
+  if (origin && (origin.startsWith("file://") || origin.startsWith("tauri://"))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "3600");
+  } else if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Max-Age", "3600");
+  }
+  
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 app.use(
   session({
     store: new PgSession({
