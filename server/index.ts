@@ -43,16 +43,35 @@ declare module "http" {
 
 const PgSession = connectPgSimple(session);
 
-// Detect if running as Tauri desktop app
-const isTauriApp = process.env.TAURI_APP === "true";
+// Auto-detect if running as Tauri desktop app (sidecar)
+// Check multiple indicators since .env may not be loaded
+const isTauriApp = 
+  process.env.TAURI_APP === "true" ||
+  process.execPath.includes("forge-backend") ||
+  process.execPath.includes("Forge") ||
+  process.cwd().includes("com.forge.app") ||
+  process.platform === "win32" && process.execPath.endsWith(".exe") && !process.execPath.includes("node");
 
-// Generate a secure random session secret if not provided
+if (isTauriApp) {
+  console.log("[Tauri] Running as desktop app - using HTTP-compatible session cookies");
+}
+
+// Generate a session secret
 const getSessionSecret = (): string => {
   if (process.env.SESSION_SECRET) {
     return process.env.SESSION_SECRET;
   }
-  // Generate a unique random secret - sessions will reset on restart
-  // For persistent sessions, set SESSION_SECRET in your .env file
+  
+  // For Tauri desktop apps, use a machine-specific but stable secret
+  // This allows sessions to persist across app restarts without requiring .env setup
+  if (isTauriApp) {
+    const machineId = process.env.COMPUTERNAME || process.env.HOSTNAME || "forge-desktop";
+    const stableSecret = crypto.createHash("sha256").update(`forge-session-${machineId}-2024`).digest("hex");
+    console.log("[Session] Using machine-specific session secret for desktop app");
+    return stableSecret;
+  }
+  
+  // For web deployments, generate random secret (sessions won't persist)
   console.warn("[Security] SESSION_SECRET not set - generating random secret (sessions will not persist across restarts)");
   return crypto.randomBytes(32).toString("hex");
 };
