@@ -52,6 +52,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 import { loadContextForCourse as loadContextFromDB } from "./llm/ingestPipeline";
+import { checkLoginRateLimit } from "./rateLimit";
 
 const FORGE_KB_PATH = process.env.FORGE_KB_PATH || "./forge_kb";
 
@@ -263,6 +264,12 @@ export async function registerRoutes(
 
   app.post("/api/auth/login", async (req, res) => {
     try {
+      // Rate limiting check
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      if (!checkLoginRateLimit(clientIp)) {
+        return res.status(429).json({ error: "Too many login attempts. Please try again in 15 minutes." });
+      }
+
       const validated = loginSchema.parse(req.body);
 
       const user = await authenticateUser(validated.email, validated.password);

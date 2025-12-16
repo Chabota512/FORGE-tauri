@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
+import crypto from "crypto";
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -42,11 +43,22 @@ declare module "http" {
 
 const PgSession = connectPgSimple(session);
 
+// Generate a secure random session secret if not provided
+const getSessionSecret = (): string => {
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET;
+  }
+  // Generate a unique random secret for this installation
+  console.warn("[Security] SESSION_SECRET not set - generating random secret");
+  return crypto.randomBytes(32).toString("hex");
+};
+const sessionSecret = getSessionSecret();
+
 // CORS middleware for Tauri webview
 app.use((req, res, next) => {
   const origin = req.headers.origin || req.headers.referer;
   
-  // Allow requests from localhost and Tauri v2 webview
+  // Allow requests from localhost and Tauri v2 webview (strict matching)
   const allowedOrigins = [
     "http://localhost:5000",
     "http://localhost:3000",
@@ -56,12 +68,11 @@ app.use((req, res, next) => {
     "http://tauri.localhost",
   ];
   
-  // Check if origin is allowed (including Tauri schemes and tauri.localhost)
+  // Strict origin check - exact match or specific protocol schemes
   const isAllowed = origin && (
-    origin.startsWith("file://") ||
-    origin.startsWith("tauri://") ||
-    allowedOrigins.includes(origin) ||
-    origin.includes("tauri.localhost")
+    origin.startsWith("file://") || // Allow file:// origins for packaged Tauri apps
+    origin.startsWith("tauri://localhost") ||
+    allowedOrigins.includes(origin)
   );
   
   if (isAllowed) {
@@ -69,6 +80,7 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Expose-Headers", "Set-Cookie");
     res.setHeader("Access-Control-Max-Age", "3600");
   }
   
@@ -87,11 +99,11 @@ app.use(
       tableName: "user_sessions",
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "drift-secret-key-change-in-production",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // Required for sameSite: "none" in Tauri
+      secure: process.env.NODE_ENV === "production", // HTTP in dev/Tauri, HTTPS in production
       httpOnly: true,
       sameSite: "none", // Required for cross-origin cookies (Tauri webview)
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
