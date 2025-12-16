@@ -16,6 +16,7 @@ async function buildSidecar() {
   
   const nativeModules = [
     "sharp",
+    "bcryptjs",
     "chromadb",
   ];
 
