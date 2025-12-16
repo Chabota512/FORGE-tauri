@@ -3,6 +3,7 @@
 // #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
 use std::sync::Mutex;
+use std::fs;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 
@@ -27,6 +28,11 @@ async fn start_backend(app: tauri::AppHandle) -> Result<String, String> {
   
   // Get the app's config directory for storing .env file
   let app_dir = app.path().app_config_dir().unwrap_or_default();
+  
+  // Ensure the config directory exists
+  if let Err(e) = fs::create_dir_all(&app_dir) {
+    eprintln!("[Forge] Warning: Could not create config directory: {}", e);
+  }
   
   let mut sidecar = shell
     .sidecar("forge-backend")
