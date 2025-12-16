@@ -91,8 +91,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: true, // Required for sameSite: "none" in Tauri
       httpOnly: true,
+      sameSite: "none", // Required for cross-origin cookies (Tauri webview)
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     },
   })
