@@ -17,6 +17,7 @@ async function buildSidecar() {
   const nativeModules = [
     "sharp",
     "chromadb",
+    "jsonwebtoken",
   ];
 
   // Create a shim for onnxruntime-node that throws a helpful error
