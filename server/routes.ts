@@ -25,7 +25,7 @@ import { getChunkCount, sanitizeCourseCode } from "./llm/retriever";
 import { updateMasteryFromFeedback, startMasteryDecayScheduler } from "./llm/mastery";
 import { exportMetrics } from "./metrics/counters";
 import type { UserPreferences } from "@shared/schema";
-import { createUser, getUserByEmail, getUserById, authenticateUser } from "./auth";
+import { createUser, getUserByEmail, getUserById, authenticateUser, generateAuthToken, verifyAuthToken } from "./auth";
 
 declare module "express-session" {
   interface SessionData {
@@ -45,10 +45,23 @@ const loginSchema = z.object({
 });
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: "Not authenticated" });
+  // Check session first (for web/browser)
+  if (req.session.userId) {
+    return next();
   }
-  next();
+
+  // Check Authorization header for tokens (for Tauri/desktop)
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const decoded = verifyAuthToken(token);
+    if (decoded) {
+      req.session.userId = decoded.userId;
+      return next();
+    }
+  }
+
+  return res.status(401).json({ error: "Not authenticated" });
 }
 
 import { loadContextForCourse as loadContextFromDB } from "./llm/ingestPipeline";
@@ -248,10 +261,12 @@ export async function registerRoutes(
         }
       });
 
+      const token = generateAuthToken(user.id);
       res.status(201).json({
         id: user.id,
         email: user.email,
         name: user.name,
+        token,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -285,10 +300,12 @@ export async function registerRoutes(
         }
       });
 
+      const token = generateAuthToken(user.id);
       res.json({
         id: user.id,
         email: user.email,
         name: user.name,
+        token,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

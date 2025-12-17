@@ -9,6 +9,20 @@ declare global {
 const isTauri = typeof window !== "undefined" && !!window.__TAURI_INTERNALS__;
 const API_BASE_URL = isTauri ? "http://localhost:5000" : "";
 
+// Store for auth token - will be set by AuthContext
+let storedAuthToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  storedAuthToken = token;
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("authToken") || storedAuthToken;
+  }
+  return storedAuthToken;
+}
+
 export function getApiUrl(path: string): string {
   if (path.startsWith("http")) return path;
   return `${API_BASE_URL}${path}`;
@@ -26,9 +40,15 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
+  const token = getAuthToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(getApiUrl(url), {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -44,8 +64,15 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const url = getApiUrl(queryKey.join("/") as string);
+    const headers: Record<string, string> = {};
+    const token = getAuthToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

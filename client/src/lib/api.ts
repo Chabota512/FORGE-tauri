@@ -1,5 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getApiUrl } from "./queryClient";
+import { getApiUrl, getAuthToken } from "./queryClient";
+
+// Helper function to add auth header to fetch calls
+function createAuthHeaders(additionalHeaders?: Record<string, string>): Record<string, string> {
+  const headers = { ...additionalHeaders };
+  const token = getAuthToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 export interface Mission {
   id: number;
@@ -132,7 +142,7 @@ export function useCourseMaterialsStatus() {
   return useQuery<CourseMaterialsStatusResponse>({
     queryKey: ["/api/courses/materials-status"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/courses/materials-status"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/courses/materials-status"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch course materials status");
       return res.json();
     },
@@ -144,7 +154,7 @@ export function useTodayMissions() {
   return useQuery<Mission[]>({
     queryKey: ["/api/missions/today"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/missions/today"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/missions/today"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch missions");
       return res.json();
     },
@@ -155,7 +165,7 @@ export function useCourses() {
   return useQuery<Course[]>({
     queryKey: ["/api/courses"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/courses"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/courses"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch courses");
       return res.json();
     },
@@ -166,7 +176,7 @@ export function useArchive() {
   return useQuery<Mission[]>({
     queryKey: ["/api/archive"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/archive"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/archive"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch archive");
       return res.json();
     },
@@ -177,7 +187,7 @@ export function useSettings() {
   return useQuery<Settings>({
     queryKey: ["/api/settings"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/settings"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/settings"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch settings");
       return res.json();
     },
@@ -188,7 +198,7 @@ export function useLLMStatus() {
   return useQuery<LLMStatus>({
     queryKey: ["/api/llm/status"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/llm/status"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/llm/status"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch LLM status");
       return res.json();
     },
@@ -198,7 +208,7 @@ export function useLLMStatus() {
 export function useValidateAllAPIs() {
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(getApiUrl("/api/llm/validate/all"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/llm/validate/all"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to validate APIs");
       return res.json() as Promise<AIValidationResults>;
     },
@@ -209,7 +219,7 @@ export function useCourseContext(courseCode: string) {
   return useQuery<CourseContext>({
     queryKey: ["/api/context", courseCode],
     queryFn: async () => {
-      const res = await fetch(getApiUrl(`/api/context/${courseCode}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/context/${courseCode}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch context");
       return res.json();
     },
@@ -225,7 +235,7 @@ export function useUpdateSettings() {
     mutationFn: async (settings: Partial<Settings>) => {
       const res = await fetch(getApiUrl("/api/settings"), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(settings),
       });
 
@@ -251,6 +261,7 @@ export function useUploadProof() {
 
       const res = await fetch(getApiUrl(`/api/missions/${courseCode}/${missionId}/proof`), {
         method: "POST", credentials: "include",
+        headers: createAuthHeaders(),
         body: formData,
       });
 
@@ -297,7 +308,7 @@ export function useSubmitMissionFeedback() {
     mutationFn: async (data: MissionFeedbackData): Promise<FeedbackResponse> => {
       const res = await fetch(getApiUrl(`/api/missions/${data.missionId}/feedback`), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data),
       });
 
@@ -315,7 +326,7 @@ export function useConfirmMissionComplete() {
     mutationFn: async ({ missionId }: { missionId: number }) => {
       const res = await fetch(getApiUrl(`/api/missions/${missionId}/confirm-complete`), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
       });
 
       const data = await res.json();
@@ -334,7 +345,7 @@ export function useCompletedMissions() {
   return useQuery({
     queryKey: ["/api/completed-missions"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/completed-missions"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/completed-missions"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch completed missions");
       return res.json();
     },
@@ -346,7 +357,7 @@ export function useMissionReport(missionId: number | null) {
     queryKey: ["/api/missions", missionId, "report"],
     queryFn: async () => {
       if (!missionId) return null;
-      const res = await fetch(getApiUrl(`/api/missions/${missionId}/report`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/missions/${missionId}/report`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch mission report");
       return res.json();
     },
@@ -360,7 +371,7 @@ export function useDeleteMission() {
   return useMutation({
     mutationFn: async ({ missionId }: { missionId: number }) => {
       const res = await fetch(getApiUrl(`/api/missions/${missionId}`), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
         headers: { "Content-Type": "application/json" },
       });
 
@@ -381,8 +392,7 @@ export function useDeleteProof() {
   return useMutation({
     mutationFn: async ({ missionId }: { missionId: number }) => {
       const res = await fetch(getApiUrl(`/api/missions/${missionId}/proof`), {
-        method: "DELETE", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
       });
 
       const data = await res.json();
@@ -407,6 +417,7 @@ export function useIngestNotes() {
 
       const res = await fetch(getApiUrl("/api/ingest_notes"), {
         method: "POST", credentials: "include",
+        headers: createAuthHeaders(),
         body: formData,
       });
 
@@ -427,7 +438,7 @@ export function useGenerateMission() {
     mutationFn: async ({ courseCode }: { courseCode: string }) => {
       const res = await fetch(getApiUrl("/api/missions/generate"), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ courseCode }),
       });
 
@@ -446,7 +457,7 @@ export function useExportPortfolio() {
     mutationFn: async (dateRange?: { startDate?: string; endDate?: string }) => {
       const res = await fetch(getApiUrl("/api/portfolio/export"), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(dateRange || {}),
       });
 
@@ -485,7 +496,7 @@ export function useForgeKBFiles() {
   }>>({
     queryKey: ["/api/forge-kb/files"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/forge-kb/files"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/forge-kb/files"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch files");
       return res.json();
     },
@@ -498,7 +509,7 @@ export function useBatchGenerateDetails() {
       const res = await fetch(getApiUrl("/api/activities/generate-details-batch"), {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -514,7 +525,7 @@ export function useCommitments() {
   return useQuery<AcademicCommitment[]>({
     queryKey: ["/api/commitments"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/commitments"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/commitments"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch commitments");
       return res.json();
     },
@@ -529,7 +540,7 @@ export function useCreateCommitment() {
     mutationFn: async (commitment: Partial<AcademicCommitment>) => {
       const res = await fetch(getApiUrl("/api/commitments"), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(commitment),
       });
 
@@ -551,8 +562,7 @@ export function useUpdateCommitment() {
     mutationFn: async (commitment: Partial<AcademicCommitment> & { id: number }) => {
       const { id, ...data } = commitment;
       const res = await fetch(getApiUrl(`/api/commitments/${id}`), {
-        method: "PUT", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        method: "PUT", credentials: "include", headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data),
       });
 
@@ -573,7 +583,7 @@ export function useDeleteCommitment() {
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(getApiUrl(`/api/commitments/${id}`), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
       });
 
       if (!res.ok) {
@@ -593,7 +603,7 @@ export function useTodaySchedule() {
   return useQuery<DailySchedule>({
     queryKey: ["/api/schedule/today"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/schedule/today"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/schedule/today"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch schedule");
       return res.json();
     },
@@ -605,7 +615,7 @@ export function useScheduleDates() {
   return useQuery<string[]>({
     queryKey: ["/api/schedule/dates"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/schedule/dates"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/schedule/dates"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch schedule dates");
       return res.json();
     },
@@ -616,7 +626,7 @@ export function useScheduleByDate(date: string) {
   return useQuery<DailySchedule>({
     queryKey: ["/api/schedule", date],
     queryFn: async () => {
-      const res = await fetch(getApiUrl(`/api/schedule/${date}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/schedule/${date}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch schedule");
       return res.json();
     },
@@ -628,7 +638,7 @@ export function useRecentSchedules(days: number = 7) {
   return useQuery<DailySchedule[]>({
     queryKey: ["/api/schedule/recent", days],
     queryFn: async () => {
-      const res = await fetch(getApiUrl(`/api/schedule/recent?days=${days}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/schedule/recent?days=${days}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch recent schedules");
       return res.json();
     },
@@ -642,7 +652,7 @@ export function useGenerateSchedule() {
     mutationFn: async (date?: string) => {
       const res = await fetch(getApiUrl("/api/schedule/generate"), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ date }),
       });
 
@@ -681,7 +691,7 @@ export function useDeadlines() {
   return useQuery<Deadline[]>({
     queryKey: ["/api/deadlines"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/deadlines"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/deadlines"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch deadlines");
       return res.json();
     },
@@ -696,7 +706,7 @@ export function useCreateDeadline() {
     mutationFn: async (deadline: Partial<Deadline>) => {
       const res = await fetch(getApiUrl("/api/deadlines"), {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: createAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(deadline),
       });
 
@@ -716,7 +726,7 @@ export function useDeleteDeadline() {
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(getApiUrl(`/api/deadlines/${id}`), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
       });
 
       if (!res.ok) {
@@ -825,7 +835,7 @@ export function useUserPreferences() {
   return useQuery<UserPreferences>({
     queryKey: ["/api/preferences"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/preferences"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/preferences"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch preferences");
       return res.json();
     },
@@ -869,7 +879,7 @@ export function useActivityLibrary() {
   return useQuery<Activity[]>({
     queryKey: ["/api/activities"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/activities"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/activities"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch activities");
       return res.json();
     },
@@ -903,7 +913,7 @@ export function useUpdateActivity() {
   return useMutation({
     mutationFn: async ({ id, ...activity }: Partial<Activity> & { id: number }) => {
       const res = await fetch(getApiUrl(`/api/activities/${id}`), {
-        method: "PUT", credentials: "include",
+        method: "PUT", credentials: "include", headers: createAuthHeaders({ "Content-Type": "application/json" }),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(activity),
       });
@@ -924,7 +934,7 @@ export function useDeleteActivity() {
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(getApiUrl(`/api/activities/${id}`), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
       });
 
       const data = await res.json();
@@ -954,7 +964,7 @@ export function useDraftSchedule(date: string) {
   return useQuery<DraftSchedule | null>({
     queryKey: ["/api/schedule/draft", date],
     queryFn: async () => {
-      const res = await fetch(getApiUrl(`/api/schedule/draft/${date}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/schedule/draft/${date}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch draft schedule");
       return res.json();
     },
@@ -1332,7 +1342,7 @@ export function useBooks() {
   return useQuery<Book[]>({
     queryKey: ["/api/books"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/books"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/books"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch books");
       return res.json();
     },
@@ -1366,7 +1376,7 @@ export function useUpdateBook() {
   return useMutation({
     mutationFn: async ({ id, ...book }: Partial<Book> & { id: number }) => {
       const res = await fetch(getApiUrl(`/api/books/${id}`), {
-        method: "PUT", credentials: "include",
+        method: "PUT", credentials: "include", headers: createAuthHeaders({ "Content-Type": "application/json" }),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(book),
       });
@@ -1387,7 +1397,7 @@ export function useDeleteBook() {
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(getApiUrl(`/api/books/${id}`), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
       });
 
       const data = await res.json();
@@ -1434,7 +1444,7 @@ export function useReadingStats() {
   return useQuery<ReadingStats>({
     queryKey: ["/api/reading-stats"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/reading-stats"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/reading-stats"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch reading stats");
       return res.json();
     },
@@ -1474,7 +1484,7 @@ export function useUpdateCourse() {
   return useMutation({
     mutationFn: async ({ id, ...course }: { id: number; code?: string; name?: string; programOfStudy?: string; icon?: string }) => {
       const res = await fetch(getApiUrl(`/api/courses/${id}`), {
-        method: "PUT", credentials: "include",
+        method: "PUT", credentials: "include", headers: createAuthHeaders({ "Content-Type": "application/json" }),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(course),
       });
@@ -1496,7 +1506,7 @@ export function useDeleteCourse() {
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(getApiUrl(`/api/courses/${id}`), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
       });
 
       const data = await res.json();
@@ -1525,7 +1535,7 @@ export function useConcepts() {
   return useQuery<ConceptTracking[]>({
     queryKey: ["/api/concepts"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/concepts"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/concepts"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch concepts");
       return res.json();
     },
@@ -1536,7 +1546,7 @@ export function useConceptsForCourse(courseId: number) {
   return useQuery<ConceptTracking[]>({
     queryKey: ["/api/concepts/course", courseId],
     queryFn: async () => {
-      const res = await fetch(getApiUrl(`/api/concepts/course/${courseId}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/concepts/course/${courseId}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch course concepts");
       return res.json();
     },
@@ -1592,7 +1602,7 @@ export function useFeedbackStats() {
   return useQuery<FeedbackStats>({
     queryKey: ["/api/analytics/feedback-stats"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/analytics/feedback-stats"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/analytics/feedback-stats"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch feedback stats");
       return res.json();
     },
@@ -1603,7 +1613,7 @@ export function useTimePerCourse() {
   return useQuery<TimePerCourse[]>({
     queryKey: ["/api/analytics/time-per-course"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/analytics/time-per-course"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/analytics/time-per-course"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch time per course");
       return res.json();
     },
@@ -1614,7 +1624,7 @@ export function useProductivityByHour() {
   return useQuery<ProductivityByHour[]>({
     queryKey: ["/api/analytics/productivity-by-hour"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/analytics/productivity-by-hour"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/analytics/productivity-by-hour"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch productivity by hour");
       return res.json();
     },
@@ -1664,7 +1674,7 @@ export function useComprehensiveAnalytics() {
   return useQuery<ComprehensiveAnalytics>({
     queryKey: ["/api/analytics/comprehensive"],
     queryFn: async () => {
-      const res = await fetch(getApiUrl("/api/analytics/comprehensive"), { credentials: "include" });
+      const res = await fetch(getApiUrl("/api/analytics/comprehensive"), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch comprehensive analytics");
       return res.json();
     },
@@ -1683,7 +1693,7 @@ export function useTimeAllocation(days: number = 7) {
   return useQuery<TimeAllocation[]>({
     queryKey: ["/api/analytics/time-allocation", days],
     queryFn: async () => {
-      const res = await fetch(getApiUrl(`/api/analytics/time-allocation?days=${days}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/analytics/time-allocation?days=${days}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch time allocation");
       return res.json();
     },
@@ -1717,7 +1727,7 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: async () => {
       const res = await fetch(getApiUrl("/api/auth/account"), {
-        method: "DELETE", credentials: "include",
+        method: "DELETE", credentials: "include", headers: createAuthHeaders(),
         headers: { "Content-Type": "application/json" },
       });
 
@@ -1782,7 +1792,7 @@ export function useLearnerProfile(courseId: number | undefined) {
     queryKey: ["/api/knowledge/profile", courseId],
     queryFn: async () => {
       if (!courseId) return null;
-      const res = await fetch(getApiUrl(`/api/knowledge/profile/${courseId}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/knowledge/profile/${courseId}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch learner profile");
       return res.json();
     },
@@ -1795,7 +1805,7 @@ export function useKnowledgeChatHistory(courseId: number | undefined) {
     queryKey: ["/api/knowledge/chat", courseId],
     queryFn: async () => {
       if (!courseId) return [];
-      const res = await fetch(getApiUrl(`/api/knowledge/chat/${courseId}`), { credentials: "include" });
+      const res = await fetch(getApiUrl(`/api/knowledge/chat/${courseId}`), { credentials: "include", headers: createAuthHeaders() });
       if (!res.ok) throw new Error("Failed to fetch chat history");
       return res.json();
     },

@@ -1,10 +1,15 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import type { User, InsertUser } from "@shared/schema";
 
 const SALT_ROUNDS = 10;
+
+// JWT configuration
+const JWT_SECRET = process.env.JWT_SECRET || "forge-desktop-secret-key-change-in-production";
+const JWT_EXPIRATION = "30d";
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
@@ -47,5 +52,18 @@ export async function authenticateUser(email: string, password: string): Promise
 declare module "express-session" {
   interface SessionData {
     userId?: number;
+  }
+}
+
+export function generateAuthToken(userId: number): string {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+}
+
+export function verifyAuthToken(token: string): { userId: number } | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    return decoded;
+  } catch {
+    return null;
   }
 }

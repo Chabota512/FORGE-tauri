@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  authToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,6 +22,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    // Restore token from localStorage on mount
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("authToken");
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [, setLocation] = useLocation();
 
@@ -34,8 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     while (retries < maxRetries) {
       try {
+        const headers: Record<string, string> = {};
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`;
+        }
+        
         const response = await fetch(getApiUrl("/api/auth/me"), {
           credentials: "include",
+          headers,
           signal: AbortSignal.timeout(5000),
         });
         if (response.ok) {
@@ -78,6 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const userData = await response.json();
+        if (userData.token) {
+          localStorage.setItem("authToken", userData.token);
+          setAuthToken(userData.token);
+        }
         setUser(userData);
         setLocation("/dashboard");
         return;
@@ -113,6 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const userData = await response.json();
+        if (userData.token) {
+          localStorage.setItem("authToken", userData.token);
+          setAuthToken(userData.token);
+        }
         setUser(userData);
         setLocation("/home");
         return;
@@ -130,16 +152,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     try {
+      const headers: Record<string, string> = {};
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      
       const response = await fetch(getApiUrl("/api/auth/logout"), {
         method: "POST",
         credentials: "include",
+        headers,
       });
       if (response.ok) {
+        localStorage.removeItem("authToken");
+        setAuthToken(null);
         setUser(null);
         setLocation("/landing");
       }
     } catch (error) {
       console.error("Logout failed:", error);
+      localStorage.removeItem("authToken");
+      setAuthToken(null);
       setUser(null);
       setLocation("/landing");
     }
@@ -151,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
+        authToken,
         login,
         signup,
         logout,
