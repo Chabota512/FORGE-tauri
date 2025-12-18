@@ -17,7 +17,6 @@ async function buildSidecar() {
   const nativeModules = [
     "sharp",
     "chromadb",
-    "jsonwebtoken",
   ];
 
   // Create a shim for onnxruntime-node that throws a helpful error
@@ -50,6 +49,7 @@ module.exports = {
       "onnxruntime-node": onnxShimPath,
     },
     logLevel: "info",
+    packages: "bundle",
   });
 
   console.log("Step 2: Copying ONNX WASM files for transformers.js...");
